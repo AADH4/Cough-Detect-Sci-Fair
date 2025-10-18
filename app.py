@@ -1,78 +1,76 @@
 import streamlit as st
-import numpy as np
 import tensorflow as tf
+import tensorflow_hub as hub
+import numpy as np
 import librosa
-import soundfile as sf
 import os
 
-# === Load Model ===
+st.set_page_config(page_title="Lung Sound Classifier", layout="centered")
+
+# ------------------------------
+# 1️⃣ Load YAMNet model (for feature extraction)
+# ------------------------------
 @st.cache_resource
-def load_model():
-    model = tf.keras.models.load_model("lung_sound_classifier.keras")  # or "model.keras"
+def load_yamnet():
+    return hub.load("https://tfhub.dev/google/yamnet/1")
+
+yamnet_model = load_yamnet()
+
+# ------------------------------
+# 2️⃣ Load your trained classifier
+# ------------------------------
+@st.cache_resource
+def load_classifier():
+    model = tf.keras.models.load_model("lung_sound_classifier.keras", compile=False)
     return model
 
-model = load_model()
+model = load_classifier()
 
-# === Safe Audio Preprocessing ===
-def preprocess_audio(file_path, target_sr=16000, duration=3):
+# ------------------------------
+# 3️⃣ Audio preprocessing — use YAMNet embeddings
+# ------------------------------
+def preprocess_audio(file_path):
     try:
-        y, sr = librosa.load(file_path, sr=target_sr, mono=True)
-    except Exception:
-        # fallback using soundfile if librosa fails
-        y, sr = sf.read(file_path)
-        if len(y.shape) > 1:  # convert to mono if stereo
-            y = np.mean(y, axis=1)
-        if sr != target_sr:
-            y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
+        waveform, sr = librosa.load(file_path, sr=16000)
+        waveform = waveform.astype(np.float32)
+        # Extract YAMNet embeddings
+        scores, embeddings, spectrogram = yamnet_model(waveform)
+        # Average embeddings into a single 1024-length vector
+        features = np.mean(embeddings.numpy(), axis=0)
+        return np.expand_dims(features, axis=0)  # Shape (1, 1024)
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
+        return None
 
-    # Ensure numeric & finite values
-    y = np.nan_to_num(y)
+# ------------------------------
+# 4️⃣ Streamlit interface
+# ------------------------------
+st.title("🩺 Lung Sound Classifier")
+st.write("Upload a `.wav` file to detect whether the lung sound is **Healthy** or **Abnormal**.")
 
-    # Trim/pad to fixed length
-    max_len = target_sr * duration
-    if len(y) > max_len:
-        y = y[:max_len]
-    else:
-        y = np.pad(y, (0, max_len - len(y)))
-
-    # Compute Mel-spectrogram
-    mel = librosa.feature.melspectrogram(y=y, sr=target_sr, n_mels=64)
-    mel_db = librosa.power_to_db(mel, ref=np.max)
-
-    # Add batch and channel dimensions
-    mel_db = mel_db[np.newaxis, ..., np.newaxis]  # shape: (1, 64, T, 1)
-    return mel_db
-
-# === Streamlit UI ===
-st.title("🩺 Cough Sound Classifier")
-st.write("Upload a **.wav** file to check if it’s **Healthy** or **Abnormal**.")
-
-uploaded_file = st.file_uploader("Choose a .wav file", type=["wav"])
+uploaded_file = st.file_uploader("Upload your lung sound (.wav)", type=["wav"])
 
 if uploaded_file is not None:
     with open("temp.wav", "wb") as f:
-        f.write(uploaded_file.read())
+        f.write(uploaded_file.getbuffer())
 
-    st.audio("temp.wav", format="audio/wav")
+    st.audio(uploaded_file, format="audio/wav")
 
-    try:
-        st.write("Processing audio...")
-        X = preprocess_audio("temp.wav")
+    st.write("🔍 Processing audio...")
+    X = preprocess_audio("temp.wav")
 
+    if X is not None:
         preds = model.predict(X)
-        pred_class = int(np.argmax(preds, axis=1)[0])
+        pred_class = np.argmax(preds)
         confidence = float(np.max(preds))
 
-        label_map = {0: "Abnormal", 1: "Healthy"}  # adjust if needed
-        st.subheader(f"Prediction: **{label_map[pred_class]}**")
+        st.success(f"Prediction: **{'Healthy' if pred_class == 1 else 'Abnormal'}**")
         st.write(f"Confidence: {confidence:.2f}")
 
-        if label_map[pred_class] == "Healthy":
-            st.success("✅ The heart sound appears healthy.")
-        else:
-            st.error("⚠️ The heart sound may be abnormal.")
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
-    finally:
-        if os.path.exists("temp.wav"):
-            os.remove("temp.wav")
+        # Optional: show raw probabilities
+        st.write("Raw model output:", preds)
+
+# ------------------------------
+# 5️⃣ Footer
+# ------------------------------
+st.caption("Built with TensorFlow + Streamlit + YAMNet | © 2025")
