@@ -54,10 +54,10 @@ if uploaded_file is not None:
         threshold = 0.5
 
         if healthy_prob >= threshold:
-            label = "Healthy"
+            label = "Abnormal"
             confidence = healthy_prob
         else:
-            label = "Abnormal"
+            label = "Healthy"
             confidence = abnormal_prob
 
         st.success(f"Prediction: **{label}**")
