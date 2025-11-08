@@ -5,7 +5,7 @@ import librosa
 import google.generativeai as genai
 import os
 
-st.title("🩺 Lung Sound Classifier + Gemini Advice")
+st.title("🩺 Lung Sound Classifier")
 st.write("Upload a `.wav` file to classify it as **Healthy** or **Abnormal**, then get health tips.")
 
 # -----------------------------
@@ -51,7 +51,7 @@ def get_gemini_advice(label, confidence):
     Provide good reccomendations for the scenario and what the user should do, make sure to emphasize that this is not fully diagnostic but provides a prediction. 
     """
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(prompt)
     return response.text.strip()
 
