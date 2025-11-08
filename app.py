@@ -51,7 +51,7 @@ if uploaded_file is not None:
         abnormal_prob = float(preds[0][0])  # assuming output = [abnormal, healthy]
         healthy_prob = float(preds[0][1])
 
-        threshold = 0.6
+        threshold = 0.5
 
         if healthy_prob >= threshold:
             label = "Healthy"
