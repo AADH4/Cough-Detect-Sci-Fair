@@ -48,8 +48,9 @@ def get_gemini_advice(label, confidence):
     Give 2-3 sentences of general, advice appropriate for that result.
     Keep it professional but friendly.
     Avoid medical claims. Encourage doctor visits if needed.
-    Provide good reccomendations for the scenario and what the user should do, make sure to emphasize that this is not fully diagnostic but provides a prediction. 
+    Provide good reccomendations for the scenario and what the user should do.
     Don't sound super indecisive, for example if the model predicts abnormality, suggest the user should go to a doctor or take over-the-counter medication, while if it predicts healthy, just provide standard cold recovery steps or none at all. 
+    Don't mention the confidence, but if you belive that it may not be a serious disease cough, but still a small common cold, provide adequate future steps. 
     """
 
     model = genai.GenerativeModel("gemini-2.5-flash")
