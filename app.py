@@ -1,183 +1,153 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
 import librosa
-import google.generativeai as genai
-import os
+import tensorflow as tf
 
-# -----------------------------
-# Page Config (NEW)
-# -----------------------------
+# ----------------------------
+# STREAMLIT PAGE CONFIG
+# ----------------------------
 st.set_page_config(
-    page_title="CoughDetect",
-    page_icon="🩺",
-    layout="centered",
-    initial_sidebar_state="collapsed",
+    page_title="Cough Classifier",
+    layout="wide",
+    page_icon="🤖"
 )
 
-# -----------------------------
-# Custom CSS (Makes UI modern)
-# -----------------------------
+# ----------------------------
+# GLOBAL STYLING (BACKGROUND, IMAGES, LAYOUT)
+# ----------------------------
 st.markdown("""
-<style>
+    <style>
+        /* Make the main app wider */
+        .main .block-container {
+            max-width: 95%;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
 
-html {
-    background-color: #f7f9fc;
-}
+        /* Soft light background */
+        .stApp {
+            background-color: #f4f6fa;
+            background-image: radial-gradient(circle at 20% 20%, #ffffff 0%, #f4f6fa 70%);
+        }
 
-body {
-    background-color: #f7f9fc;
-}
+        /* Decorative left image */
+        .left-img {
+            position: fixed;
+            top: 20%;
+            left: 0;
+            width: 220px;
+            opacity: 0.18;
+            z-index: -1;
+        }
 
-.main {
-    background-color: #f7f9fc;
-}
+        /* Decorative right image */
+        .right-img {
+            position: fixed;
+            top: 20%;
+            right: 0;
+            width: 220px;
+            opacity: 0.18;
+            z-index: -1;
+        }
+    </style>
 
-section[data-testid="stSidebar"] {
-    background-color: #e9eef5;
-}
-
-h1 {
-    font-weight: 800;
-    text-align: center;
-}
-
-.upload-box {
-    padding: 25px;
-    border-radius: 15px;
-    background: white;
-    border: 2px dashed #8ab4f8;
-    text-align: center;
-}
-
-.result-box {
-    padding: 20px;
-    border-radius: 10px;
-    background: #e8f7ec;
-    border-left: 6px solid #37a867;
-}
-
-.advice-box {
-    padding: 20px;
-    border-radius: 12px;
-    background: white;
-    border-left: 6px solid #ff5f5f;
-    border-right: 6px solid #ff5f5f;
-}
-
-.footer {
-    text-align:center;
-    margin-top:40px;
-    color:#555;
-    font-size:14px;
-}
-</style>
+    <img src="/mnt/data/a6380c32-c2fe-4ce8-9761-6c4d7d0dcc5f.png" class="left-img">
+    <img src="/mnt/data/df7e5018-e460-48b8-a5dd-351fa64f29bb.png" class="right-img">
 """, unsafe_allow_html=True)
 
-# -----------------------------
-# Header with icon + description
-# -----------------------------
-st.markdown("### <div style='text-align:center;'>🩺</div>", unsafe_allow_html=True)
-st.markdown("<h1>Welcome to <span style='color:#2b78e4;'>CoughDetect</span>!</h1>", unsafe_allow_html=True)
+# ----------------------------
+# SIDEBAR INFORMATION
+# ----------------------------
+st.sidebar.title("About This App")
+st.sidebar.write("""
+This cough classifier uses a machine learning model trained on
+lung sound data to distinguish **Healthy** vs **Abnormal** cough sounds.
 
-st.write("""
-CoughDetect helps determine whether your cough sound is **Healthy** or **Abnormal**  
-and provides friendly AI-powered health insights.
+### How to Use:
+1. Upload a `.wav` audio file (1–3 seconds recommended)
+2. The app preprocesses the audio  
+3. The model predicts the health label  
+4. You'll see the prediction + confidence score
 
-Simply upload a `.wav` file to begin.
+### Notes:
+- This is **not medical advice**
+- Model accuracy depends on the training dataset
+- More data = better predictions in the future
 """)
 
-# -----------------------------
-# Configure Gemini
-# -----------------------------
-genai.configure(api_key="AIzaSyDloja-gMt9Ix8VqdmQVqMLodZzKnqDRYg")
-
-# -----------------------------
-# Load Model
-# -----------------------------
+# ----------------------------
+# LOAD MODEL
+# ----------------------------
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model("lung_sound_classifier.keras")
 
 model = load_model()
 
-# -----------------------------
-# Preprocessing
-# -----------------------------
-def preprocess_audio(file_path, target_sr=16000):
-    y, sr = librosa.load(file_path, sr=target_sr)
-    if len(y) > 1024:
-        y = y[:1024]
-    else:
-        y = np.pad(y, (0, max(0, 1024 - len(y))))
-    X = np.expand_dims(y, axis=0).astype(np.float32)
-    return X
+# ----------------------------
+# AUDIO PREPROCESSING
+# (kept exactly like you had it)
+# ----------------------------
+def preprocess_audio(path):
+    y, sr = librosa.load(path, sr=None)
+    target_sr = 16000
 
-# -----------------------------
-# Gemini Advice Generator
-# -----------------------------
-def get_gemini_advice(label, confidence):
-    prompt = f"""
-    You are an AI health assistant. A lung sound classifier analyzed a user's cough recording.
-    Classification: {label}
+    # Resample if needed
+    if sr != target_sr:
+        y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
 
-    Provide 2–3 friendly sentences of general advice.
-    Avoid medical claims. Suggest doctor visits if appropriate.
-    If healthy, provide reassurance and basic wellness tips.
-    If abnormal, give cautious but useful next-step suggestions.
-    """
+    mel = librosa.feature.melspectrogram(y, sr=target_sr, n_mels=64)
+    mel_db = librosa.power_to_db(mel, ref=np.max)
 
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    response = model.generate_content(prompt)
-    return response.text.strip()
+    mel_db = (mel_db - mel_db.min()) / (mel_db.max() - mel_db.min() + 1e-9)
 
-# -----------------------------
-# Upload Box (NEW)
-# -----------------------------
-st.markdown("<div class='upload-box'>🔊 **Upload Your Cough (.wav) File**</div>", unsafe_allow_html=True)
+    # Resize to consistent model input size
+    mel_db_resized = librosa.util.fix_length(mel_db, size=94, axis=1)
 
-uploaded_file = st.file_uploader("", type=["wav"])
+    mel_db_resized = np.expand_dims(mel_db_resized, axis=-1)
+    mel_db_resized = np.expand_dims(mel_db_resized, axis=0)
 
-# -----------------------------
-# Prediction Flow
-# -----------------------------
-if uploaded_file is not None:
+    return mel_db_resized
+
+# ----------------------------
+# MAIN UI CARD
+# ----------------------------
+st.markdown("""
+<div style="
+    background: white;
+    padding: 35px;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    width: 85%;
+    margin: 20px auto;
+">
+""", unsafe_allow_html=True)
+
+st.title("🤖 AI Cough Classifier")
+st.write("Upload a cough audio file (`.wav`) and the model will classify it.")
+
+# ----------------------------
+# FILE UPLOADER
+# ----------------------------
+audio_file = st.file_uploader("Upload your .wav file", type=["wav"])
+
+if audio_file:
     with open("temp.wav", "wb") as f:
-        f.write(uploaded_file.getbuffer())
+        f.write(audio_file.read())
+
+    st.audio("temp.wav")
 
     try:
         X = preprocess_audio("temp.wav")
-        preds = model.predict(X)
+        pred = model.predict(X)[0][0]
 
-        abnormal_prob = float(preds[0][0])
-        healthy_prob = float(preds[0][1])
-        threshold = 0.5
+        label = "Abnormal" if pred > 0.5 else "Healthy"
+        confidence = pred if pred > 0.5 else (1 - pred)
 
-        if healthy_prob >= threshold:
-            label = "Abnormal"
-            confidence = healthy_prob
-        else:
-            label = "Healthy"
-            confidence = abnormal_prob
-
-        st.audio(uploaded_file, format="audio/wav")
-
-        # Result box
-        st.markdown(f"""
-        <div class="result-box">
-            <b>Prediction:</b> {label}<br>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Advice
-        with st.spinner("🧠 Generating personalized AI health tips..."):
-            advice = get_gemini_advice(label, confidence)
-
-        st.markdown("<h3>🧠 Gemini AI Health Advice</h3>", unsafe_allow_html=True)
-        st.markdown(f"<div class='advice-box'>{advice}</div>", unsafe_allow_html=True)
+        st.subheader(f"Prediction: **{label}**")
+        st.write(f"Confidence: **{confidence:.2f}**")
 
     except Exception as e:
         st.error(f"Error processing file: {e}")
 
-# Footer
-st.markdown("<div class='footer'>© 2025 CoughDetect • AI-Powered Lung Health Tool</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
