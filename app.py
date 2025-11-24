@@ -99,7 +99,8 @@ CoughGPT analyzes **cough audio** using a deep learning model to provide you wit
 - Not medical advice  
 - Best with clean, 1–2 second cough recordings  
 """)
-genai.configure(api_key="AIzaSyCdz4Plyz41ugzAsld4Miqo7alvpideQz4")
+api_key = st.secrets["GEMINI_API_KEY"]
+genai.configure(api_key=api_key)
 # ----------------------------
 # LOAD MODEL (Your original logic)
 # ----------------------------
