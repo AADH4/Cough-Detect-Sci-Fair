@@ -3,6 +3,7 @@ import numpy as np
 import librosa
 import tensorflow as tf
 import google.generativeai as genai
+import os
 # ----------------------------
 # STREAMLIT PAGE CONFIG
 # ----------------------------
@@ -149,36 +150,28 @@ def get_gemini_advice(label, confidence):
 # ----------------------------
 # FILE UPLOAD
 # ----------------------------
-uploaded_file = st.file_uploader("Upload WAV File", type=["wav"])
 
+uploaded_file = st.file_uploader("Upload a WAV file", type=["wav"]) 
 if uploaded_file is not None:
-    with open("temp.wav", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-
-    st.audio(uploaded_file)
-
-    try:
-        X = preprocess_audio("temp.wav")
-        preds = model.predict(X)
-
-        abnormal_prob = float(preds[0][0])
-        healthy_prob = float(preds[0][1])
-
-        threshold = 0.5
-
-        if healthy_prob >= threshold:
-            label = "Abnormal"
-            confidence = healthy_prob
-        else:
-            label = "Healthy"
-            confidence = abnormal_prob
+    with open("temp.wav", "wb") as f: 
+        f.write(uploaded_file.getbuffer()) 
+    try: 
+        X = preprocess_audio("temp.wav") 
+        preds = model.predict(X) 
+        abnormal_prob = float(preds[0][0]) 
+        healthy_prob = float(preds[0][1]) 
+        threshold = 0.5 
+        if healthy_prob >= threshold: 
+            label = "Abnormal" confidence = healthy_prob 
+        else: label = "Healthy" 
+            confidence = abnormal_prob 
+        st.audio(uploaded_file, format="audio/wav") 
+        st.success(f"Prediction: **{label}**")
         with st.spinner("Generating personalized advice..."): 
-            advice = get_gemini_advice(label, confidence)
-
-        st.subheader(f"Prediction: **{label}**")
-        
-
-    except Exception as e:
+            advice = get_gemini_advice(label, confidence) 
+        st.subheader("🧠 Gemini AI Health Advice")
+        st.write(advice) 
+    except Exception as e: 
         st.error(f"Error processing file: {e}")
 
 st.markdown("</div>", unsafe_allow_html=True)
