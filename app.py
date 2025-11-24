@@ -143,7 +143,7 @@ def get_gemini_advice(label, confidence):
     Don't sound super indecisive, for example if the model predicts abnormality, suggest the user should go to a doctor or take over-the-counter medication, while if it predicts healthy, just provide standard cold recovery steps or none at all. 
     Don't mention the confidence, but if you belive that it may not be a serious disease cough, but still a small common cold, provide adequate future steps. 
     Based on the confidence add further ideas, so if the model says it's normal but slightly low confidence it could be a cold so mention that and appropriate steps and if it's abnormal and with very high confidence it could be a serious disease perhaps""" 
-    model = genai.GenerativeModel("gemini-1.5-flash") 
+    model = genai.GenerativeModel("gemini-2.5-flash") 
     response = model.generate_content(prompt) 
     return response.text.strip()
 # ----------------------------
