@@ -87,7 +87,7 @@ st.markdown("""
 # ----------------------------
 st.sidebar.title("ℹ️ About CoughDetect")
 st.sidebar.write("""
-This tool analyzes **cough audio** using a deep learning model.
+This tool analyzes **cough audio** using a deep learning model to provide you with early respiratory disease detection and provides health advice.
 
 ### How It Works:
 1. Upload a `.wav` file  
