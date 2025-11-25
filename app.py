@@ -100,7 +100,7 @@ CoughDetect analyzes **cough audio** using a deep learning model to provide you 
 - Best with clean, 1–2 second cough recordings  
 """)
 api_key = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=api_key)
+genai.configure(api_key="AIzaSyAbk0qP4Cb9Ff0WlFKG0SV20aG95C5aM5g")
 # ----------------------------
 # LOAD MODEL (Your original logic)
 # ----------------------------
