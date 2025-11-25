@@ -8,7 +8,7 @@ import os
 # STREAMLIT PAGE CONFIG
 # ----------------------------
 st.set_page_config(
-    page_title="CoughGPT",
+    page_title="CoughDetect",
     layout="wide",
     page_icon="🩺"
 )
@@ -86,9 +86,9 @@ st.markdown("""
 # ----------------------------
 # SIDEBAR EXPLANATION
 # ----------------------------
-st.sidebar.title("ℹ️ About CoughGPT")
+st.sidebar.title("ℹ️ About CoughDetect")
 st.sidebar.write("""
-CoughGPT analyzes **cough audio** using a deep learning model to provide you with early respiratory disease detection and provides health advice.
+CoughDetect analyzes **cough audio** using a deep learning model to provide you with early respiratory disease detection and provides health advice.
 
 ### How It Works:
 1. Upload a `.wav` file  
@@ -136,7 +136,7 @@ st.markdown("""
 ">
 """, unsafe_allow_html=True)
 
-st.title("🩺 Welcome to CoughGPT!")
+st.title("🩺 Welcome to CoughDetect!")
 st.write("Upload a `.wav` file to check whether your cough is **Healthy** or **Abnormal**.")
 def get_gemini_advice(label, confidence): 
     prompt = f""" You are an AI health assistant. A lung sound classifier analyzed a user's cough recording. Result: - Classification: {label} - Confidence: {confidence:.2f} 
