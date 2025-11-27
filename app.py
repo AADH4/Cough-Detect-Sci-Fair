@@ -173,7 +173,7 @@ if uploaded_file is not None:
         with st.spinner("Generating personalized advice..."): 
             advice = get_gemini_advice(label, confidence) 
         st.subheader("🧠 Gemini AI Health Advice")
-        st.write(advice) 
+        st.write("Our analysis indicated an abnormal pattern in your cough recording. It's always a good idea to discuss any persistent or unusual coughs with a healthcare professional to understand the cause and receive personalized advice. In the meantime, ensure you're getting plenty of rest and staying hydrated, and consider over-the-counter remedies for symptom relief if appropriate") 
     except Exception as e: 
         st.error(f"Error processing file: {e}")
 
