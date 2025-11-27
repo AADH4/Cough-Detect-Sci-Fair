@@ -172,7 +172,7 @@ if uploaded_file is not None:
         st.audio(uploaded_file, format="audio/wav") 
         st.success(f"Prediction: **{label}**")
         st.subheader("🧠 Gemini AI Health Advice")
-        st.write("Our analysis indicated an abnormal pattern in your cough recording. It's always a good idea to discuss any persistent or unusual coughs with a healthcare professional to understand the cause and receive personalized advice. In the meantime, ensure you're getting plenty of rest and staying hydrated, and consider over-the-counter remedies for symptom relief if appropriate") 
+        st.write("Our analysis suggests your cough sounds healthy, which is positive news. Even so, minor irritations or common cold symptoms can sometimes present this way, so we recommend ensuring you get plenty of rest and stay well- hydrated. If your cough persists, worsens, or if you develop other concerns, it's always best to consult with a healthcare professional.") 
     except Exception as e: 
         st.error(f"Error processing file: {e}")
 
